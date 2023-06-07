@@ -46,7 +46,7 @@ jobs:
           - 20.04
     steps:
       - name: Login to GitHub Container Registry
-        if: ${{ github.repository_owner == github.actor }}
+        # if: ${{ github.repository_owner == github.actor }}
         id: ghcr
         uses: docker/login-action@v2
         with:
@@ -54,17 +54,17 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Quay
-        if: ${{ github.repository_owner == github.actor }}
-        id: quay
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USER }}
-          password: ${{ secrets.QUAY_TOKEN }}
+      # - name: Login to Quay
+      #   if: ${{ github.repository_owner == github.actor }}
+      #   id: quay
+      #   uses: docker/login-action@v2
+      #   with:
+      #     registry: quay.io
+      #     username: ${{ secrets.QUAY_USER }}
+      #     password: ${{ secrets.QUAY_TOKEN }}
 
       - name: Login to Docker Hub
-        if: ${{ github.repository_owner == github.actor }}
+        # if: ${{ github.repository_owner == github.actor }}
         id: dckr
         uses: docker/login-action@v2
         with:
@@ -197,117 +197,117 @@ jobs:
                 'docker.io/${{ env.SLUG }}:${{ env.TAG }}'
               )
 
-  build-flavours:
-    name: Build ${{ matrix.TYPE }}:${{ matrix.TAG }}
-    runs-on: ubuntu-latest
-    needs: [build-base]
-    env:
-      PLATFORMS: ${{ matrix.PLATFORMS }}
-      BUILD_TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}
-      TYPE: ${{ matrix.TYPE }}
-    strategy:
-      fail-fast: false
-      max-parallel: 8
-      matrix:
-        TAG:
-          - latest
-          - 22.04
-          - 20.04
-        PLATFORMS:
-          - 'linux/amd64'
-        TYPE:
-          - go
-          - js
-          - pwsh
-          - rust
-          - dotnet
-          - custom
-    steps:
-      - name: Login to GitHub Container Registry
-        if: ${{ github.repository_owner == github.actor }}
-        id: ghcr
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  # build-flavours:
+  #   name: Build ${{ matrix.TYPE }}:${{ matrix.TAG }}
+  #   runs-on: ubuntu-latest
+  #   needs: [build-base]
+  #   env:
+  #     PLATFORMS: ${{ matrix.PLATFORMS }}
+  #     BUILD_TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}
+  #     TYPE: ${{ matrix.TYPE }}
+  #   strategy:
+  #     fail-fast: false
+  #     max-parallel: 8
+  #     matrix:
+  #       TAG:
+  #         - latest
+  #         - 22.04
+  #         - 20.04
+  #       PLATFORMS:
+  #         - 'linux/amd64'
+  #       TYPE:
+  #         - go
+  #         - js
+  #         - pwsh
+  #         - rust
+  #         - dotnet
+  #         - custom
+  #   steps:
+  #     - name: Login to GitHub Container Registry
+  #       if: ${{ github.repository_owner == github.actor }}
+  #       id: ghcr
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.repository_owner }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Quay
-        if: ${{ github.repository_owner == github.actor }}
-        id: quay
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USER }}
-          password: ${{ secrets.QUAY_TOKEN }}
+  #     - name: Login to Quay
+  #       if: ${{ github.repository_owner == github.actor }}
+  #       id: quay
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: quay.io
+  #         username: ${{ secrets.QUAY_USER }}
+  #         password: ${{ secrets.QUAY_TOKEN }}
 
-      - name: Login to Docker Hub
-        if: ${{ github.repository_owner == github.actor }}
-        id: dckr
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+  #     - name: Login to Docker Hub
+  #       if: ${{ github.repository_owner == github.actor }}
+  #       id: dckr
+  #       uses: docker/login-action@v2
+  #       with:
+  #         username: ${{ secrets.DOCKER_USER }}
+  #         password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Print tag
-        run: |
-          if ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ) }} ; then
-            echo "PART_TAG=$(date +%Y%m%d)" | tee -a "$GITHUB_ENV"
-          else
-            echo "PART_TAG=dev" | tee -a "$GITHUB_ENV"
-          fi
+  #     - name: Print tag
+  #       run: |
+  #         if ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ) }} ; then
+  #           echo "PART_TAG=$(date +%Y%m%d)" | tee -a "$GITHUB_ENV"
+  #         else
+  #           echo "PART_TAG=dev" | tee -a "$GITHUB_ENV"
+  #         fi
 
-      - name: Set Ubuntu version to RELEASE
-        run: |
-          if [ "latest" = "${{ matrix.TAG }}" ]; then
-            echo "RELEASE_TAG=$(lsb_release -rs)" | tee -a "$GITHUB_ENV"
-          else
-            echo "RELEASE_TAG=${{ matrix.TAG }}" | tee -a "$GITHUB_ENV"
-          fi
+  #     - name: Set Ubuntu version to RELEASE
+  #       run: |
+  #         if [ "latest" = "${{ matrix.TAG }}" ]; then
+  #           echo "RELEASE_TAG=$(lsb_release -rs)" | tee -a "$GITHUB_ENV"
+  #         else
+  #           echo "RELEASE_TAG=${{ matrix.TAG }}" | tee -a "$GITHUB_ENV"
+  #         fi
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
 
-      - run: |
-          docker buildx create \
-            --use \
-            --name image-builder \
-            --buildkitd-flags '--allow-insecure-entitlement network.host' \
-            --driver docker-container \
-            --driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000" \
-            --platform "${{ env.PLATFORMS }}"
+  #     - run: |
+  #         docker buildx create \
+  #           --use \
+  #           --name image-builder \
+  #           --buildkitd-flags '--allow-insecure-entitlement network.host' \
+  #           --driver docker-container \
+  #           --driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000" \
+  #           --platform "${{ env.PLATFORMS }}"
 
-      - uses: actions/checkout@v3
+  #     - uses: actions/checkout@v3
 
-      - name: Build and push ${{ env.DISTRO }}:${{ env.TAG }}
-        shell: pwsh
-        env:
-          TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}-${{ env.PART_TAG }}
-          FROM_IMAGE: ghcr.io/${{ env.SLUG }}
-          FROM_TAG: act-${{ matrix.TAG }}-${{ env.PART_TAG }}
-          BUILD_TAG_VERSION: ${{ env.PART_TAG }}
-        run: |
-          ./build.ps1 `
-              -push `
-              -tags @(
-                'ghcr.io/${{ env.SLUG }}:${{ env.TAG }}',
-                'quay.io/${{ env.SLUG }}:${{ env.TAG }}',
-                'docker.io/${{ env.SLUG }}:${{ env.TAG }}'
-              )
+  #     - name: Build and push ${{ env.DISTRO }}:${{ env.TAG }}
+  #       shell: pwsh
+  #       env:
+  #         TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}-${{ env.PART_TAG }}
+  #         FROM_IMAGE: ghcr.io/${{ env.SLUG }}
+  #         FROM_TAG: act-${{ matrix.TAG }}-${{ env.PART_TAG }}
+  #         BUILD_TAG_VERSION: ${{ env.PART_TAG }}
+  #       run: |
+  #         ./build.ps1 `
+  #             -push `
+  #             -tags @(
+  #               'ghcr.io/${{ env.SLUG }}:${{ env.TAG }}',
+  #               'quay.io/${{ env.SLUG }}:${{ env.TAG }}',
+  #               'docker.io/${{ env.SLUG }}:${{ env.TAG }}'
+  #             )
 
-      - name: Build and push ${{ env.DISTRO }}:${{ env.TAG }}
-        shell: pwsh
-        if: ${{ ( github.event_name != 'pull_request' && github.event_name != 'push' && !env.ACT ) }}
-        env:
-          TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}
-          FROM_IMAGE: ghcr.io/${{ env.SLUG }}
-          FROM_TAG: act-${{ matrix.TAG }}-${{ env.PART_TAG }}
-          BUILD_TAG_VERSION: ${{ env.PART_TAG }}
-        run: |
-          ./build.ps1 `
-              -push `
-              -tags @(
-                'ghcr.io/${{ env.SLUG }}:${{ env.TAG }}',
-                'quay.io/${{ env.SLUG }}:${{ env.TAG }}',
-                'docker.io/${{ env.SLUG }}:${{ env.TAG }}'
-              )
+  #     - name: Build and push ${{ env.DISTRO }}:${{ env.TAG }}
+  #       shell: pwsh
+  #       if: ${{ ( github.event_name != 'pull_request' && github.event_name != 'push' && !env.ACT ) }}
+  #       env:
+  #         TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}
+  #         FROM_IMAGE: ghcr.io/${{ env.SLUG }}
+  #         FROM_TAG: act-${{ matrix.TAG }}-${{ env.PART_TAG }}
+  #         BUILD_TAG_VERSION: ${{ env.PART_TAG }}
+  #       run: |
+  #         ./build.ps1 `
+  #             -push `
+  #             -tags @(
+  #               'ghcr.io/${{ env.SLUG }}:${{ env.TAG }}',
+  #               'quay.io/${{ env.SLUG }}:${{ env.TAG }}',
+  #               'docker.io/${{ env.SLUG }}:${{ env.TAG }}'
+  #             )
